@@ -38,6 +38,14 @@ module.exports.loginUser=async (req,res,next)=>{
         return res.status(401).json({message:'Invalid email or password'});
     }
     const token=user.generateAuthToken();
+    res.cookie('token',token);//this will set the token in the cookie and send it to the frontend
     res.status(200).json({user,token});//this will send the user and the token to the frontend
 
+}
+module.exports.getUserProfile=async (req,res,next)=>{
+    return res.status(200).json(req.user);//this will send the user to the frontend
+}
+module.exports.logoutUser=async (req,res,next)=>{
+    res.clearCookie('token');//this will clear the cookie and send the response to the frontend
+    const token=req.cookies.token;//this will get the token from the cookie
 }
