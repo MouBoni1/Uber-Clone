@@ -1,6 +1,7 @@
 const userModel=require('../models/user.model');
 const userService=require('../services/user.service');
 const {validationResult}=require('express-validator');
+const blacklistTokenModel=require('../models/blacklistToken.model');
 
 module.exports.registerUser=async (req,res,next)=>{
     const errors=validationResult(req);//if there are any errors in the validation, it will be stored in the errors variable
@@ -9,6 +10,10 @@ module.exports.registerUser=async (req,res,next)=>{
     }
     //if there are no errors in the validation, it will take the data from the request body and store it in the user variable
     const {fullname,email,password}=req.body;
+    const isUserAlready=await userModel.findOne({email});//this will find the user in the database
+    if(isUserAlready){
+        return res.status(400).json({message:'User already exists'});//if the user is not found, it will send this message to the frontend
+    }
     //now we require hashed password
     const hashedPassword=await userModel.hashPassword(password);
     //now we require the user to be created
@@ -47,5 +52,8 @@ module.exports.getUserProfile=async (req,res,next)=>{
 }
 module.exports.logoutUser=async (req,res,next)=>{
     res.clearCookie('token');//this will clear the cookie and send the response to the frontend
-    const token=req.cookies.token;//this will get the token from the cookie
+    const token = req.cookies?.token || req.header('Authorization')?.split(' ')[1]; // This will get the token from the cookies or Authorization header
+
+    await blacklistTokenModel.create({token});//this will create the token in the blacklistToken model
+    res.status(200).json({message:'Logout successful'});//this will send the message to the frontend
 }
